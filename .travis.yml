@@ -6,6 +6,6 @@ os:
 env:
   - GO111MODULE=on
 go:
-  - master
+  - "1.12.1"
 script:
   - go test -v ./collector

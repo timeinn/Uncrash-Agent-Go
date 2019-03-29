@@ -9,3 +9,10 @@ func TestGetCPUInfo(t *testing.T) {
 		t.Log(cpuInfo)
 	}
 }
+func TestGetHostName(t *testing.T) {
+	if name, err := GetHostName(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(name)
+	}
+}
