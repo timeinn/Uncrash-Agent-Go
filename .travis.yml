@@ -1,0 +1,11 @@
+language: go
+os:
+  - windows
+  - linux
+
+env:
+  - GO111MODULE=on
+go:
+  - master
+script:
+  - go test -v ./collector
