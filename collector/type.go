@@ -12,3 +12,7 @@ type CpuInfo struct {
 	Name   string `json:"name"`
 	Thread int    `json:"thread"`
 }
+type Interfaces struct {
+	Name  string   `json:"name"`
+	Addrs []string `json:"addrs"`
+}

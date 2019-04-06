@@ -16,3 +16,10 @@ func TestGetHostName(t *testing.T) {
 		t.Log(name)
 	}
 }
+func TestGetNetInterfaces(t *testing.T) {
+	if NetInterfaces, err := GetNetInterfaces(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(NetInterfaces)
+	}
+}
