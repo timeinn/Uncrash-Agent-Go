@@ -3,6 +3,7 @@ package collector
 import (
 	"net"
 	"os"
+	"strings"
 )
 
 // 获取主机名
@@ -18,7 +19,8 @@ func GetNetInterfaces() (interfaces []Interfaces, error error) {
 		return
 	} else {
 		for _, v := range inters {
-			if v.Name == "lo" {
+			flag:=v.Flags.String()
+			if !strings.Contains(flag,"up") || strings.Contains(flag,"loopback"){
 				continue
 			}
 			var inter = Interfaces{}
@@ -31,7 +33,11 @@ func GetNetInterfaces() (interfaces []Interfaces, error error) {
 					continue
 				}
 				for _, addr := range Addrs {
-					inter.Addrs = append(inter.Addrs, addr.String())
+					Addr,e:=addr.(*net.IPNet)
+					if !e {
+						continue
+					}
+					inter.Addrs = append(inter.Addrs, Addr.IP.String())
 				}
 			}
 			interfaces = append(interfaces, inter)

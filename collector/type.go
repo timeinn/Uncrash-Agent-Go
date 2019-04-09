@@ -16,3 +16,10 @@ type Interfaces struct {
 	Name  string   `json:"name"`
 	Addrs []string `json:"addrs"`
 }
+
+type Storage struct {
+	Name       string `json:"name"`
+	FileSystem string `json:"file_system"`
+	Total      uint64 `json:"total"`
+	Free       uint64 `json:"free"`
+}

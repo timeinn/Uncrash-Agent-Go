@@ -23,3 +23,11 @@ func TestGetNetInterfaces(t *testing.T) {
 		t.Log(NetInterfaces)
 	}
 }
+
+func TestGetDiskInfo(t *testing.T) {
+	if diskInfo, err := GetDiskInfo(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(diskInfo)
+	}
+}

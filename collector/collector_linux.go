@@ -3,10 +3,13 @@
 package collector
 
 import (
+	"bufio"
 	"io/ioutil"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 )
 
 func GetCPUInfo() (Cpu, error) {
@@ -57,4 +60,53 @@ func GetCPUInfo() (Cpu, error) {
 	}
 	c.Num = len(e)
 	return c, nil
+}
+
+func GetDiskInfo() ([]Storage, error) {
+	useMounts := false
+	_f, err := os.Open("/proc/self/mountinfo")
+	if err != nil {
+		if err != err.(*os.PathError) {
+			return nil, err
+		}
+		useMounts = true
+		_f, err = os.Open("/proc/self/mounts")
+		if err != nil {
+			return nil, err
+		}
+	}
+	s := bufio.NewScanner(_f)
+	defer func() {
+		_ = _f.Close()
+	}()
+	Storages := make([]Storage, 0)
+	for s.Scan() {
+		var storage Storage
+		var path string
+		lines := strings.Fields(s.Text())
+		if useMounts {
+			if !strings.Contains(lines[0], "/dev/") {
+				continue
+			}
+			storage.Name = lines[0]
+			storage.FileSystem = lines[2]
+			path = lines[1]
+		} else {
+			if !strings.Contains(lines[8], "/dev/") {
+				continue
+			}
+			storage.Name = lines[8]
+			storage.FileSystem = lines[7]
+			path = lines[4]
+		}
+		fs := syscall.Statfs_t{}
+		err = syscall.Statfs(path, &fs)
+		if err != nil {
+			continue
+		}
+		storage.Total = fs.Blocks * uint64(fs.Bsize)
+		storage.Free = fs.Bfree * uint64(fs.Bsize)
+		Storages = append(Storages, storage)
+	}
+	return Storages, nil
 }

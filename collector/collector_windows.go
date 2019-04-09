@@ -32,3 +32,33 @@ func GetCPUInfo() (Cpu, error) {
 	}
 	return info, nil
 }
+func GetDiskInfo() ([]Storage,error) {
+	type storageInfo struct {
+		Name       string
+		Size       uint64
+		FreeSpace  uint64
+		FileSystem string
+	}
+
+	var storageinfo []storageInfo
+	var loaclStorages []Storage
+	err := wmi.Query("Select * from Win32_LogicalDisk", &storageinfo)
+	if err != nil {
+		return nil,err
+	}
+
+	for _, storage := range storageinfo {
+		if storage.Size <=0 {
+			continue
+		}
+		info := Storage{
+			Name:       storage.Name,
+			FileSystem: storage.FileSystem,
+			Total:      storage.Size,
+			Free:       storage.FreeSpace,
+		}
+		loaclStorages = append(loaclStorages, info)
+	}
+	return loaclStorages, nil
+
+}
