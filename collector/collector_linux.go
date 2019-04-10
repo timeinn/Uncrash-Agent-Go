@@ -4,6 +4,7 @@ package collector
 
 import (
 	"bufio"
+	"github.com/deckarep/golang-set"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -80,6 +81,7 @@ func GetDiskInfo() ([]Storage, error) {
 		_ = _f.Close()
 	}()
 	Storages := make([]Storage, 0)
+	devSet := mapset.NewSet()
 	for s.Scan() {
 		var storage Storage
 		var path string
@@ -99,14 +101,16 @@ func GetDiskInfo() ([]Storage, error) {
 			storage.FileSystem = lines[7]
 			path = lines[4]
 		}
-		fs := syscall.Statfs_t{}
-		err = syscall.Statfs(path, &fs)
-		if err != nil {
-			continue
+		if devSet.Add(storage.Name) {
+			fs := syscall.Statfs_t{}
+			err = syscall.Statfs(path, &fs)
+			if err != nil {
+				continue
+			}
+			storage.Total = fs.Blocks * uint64(fs.Bsize)
+			storage.Free = fs.Bfree * uint64(fs.Bsize)
+			Storages = append(Storages, storage)
 		}
-		storage.Total = fs.Blocks * uint64(fs.Bsize)
-		storage.Free = fs.Bfree * uint64(fs.Bsize)
-		Storages = append(Storages, storage)
 	}
 	return Storages, nil
 }
