@@ -107,10 +107,22 @@ func GetDiskInfo() ([]Storage, error) {
 			if err != nil {
 				continue
 			}
-			storage.Total = fs.Blocks * uint64(fs.Bsize)
-			storage.Free = fs.Bfree * uint64(fs.Bsize)
+			storage.Total = int(fs.Blocks * uint64(fs.Bsize))
+			storage.Free = int(fs.Bfree * uint64(fs.Bsize))
 			Storages = append(Storages, storage)
 		}
 	}
 	return Storages, nil
+}
+func GetMemoryInfo() (Memory, error) {
+	sysInfo := new(syscall.Sysinfo_t)
+	if err:=syscall.Sysinfo(sysInfo);err!=nil{
+		return Memory{}, err
+	}
+	memory := Memory{}
+	memory.Physical.Free = int(sysInfo.Freeram)
+	memory.Physical.Total = int(sysInfo.Totalram)
+	memory.Swap.Free = int(sysInfo.Freeswap)
+	memory.Swap.Total = int(sysInfo.Totalswap)
+	return memory, nil
 }

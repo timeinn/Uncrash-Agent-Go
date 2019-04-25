@@ -3,9 +3,14 @@
 package collector
 
 import (
+	"fmt"
 	"github.com/StackExchange/wmi"
 	log "github.com/cihub/seelog"
+	"golang.org/x/sys/windows"
 )
+
+var modpsapi = windows.NewLazySystemDLL("psapi.dll")
+var kernel = windows.NewLazyDLL("Kernel32.dll")
 
 type cpuInfo struct {
 	Name          string
@@ -32,7 +37,7 @@ func GetCPUInfo() (Cpu, error) {
 	}
 	return info, nil
 }
-func GetDiskInfo() ([]Storage,error) {
+func GetDiskInfo() ([]Storage, error) {
 	type storageInfo struct {
 		Name       string
 		Size       uint64
@@ -44,21 +49,45 @@ func GetDiskInfo() ([]Storage,error) {
 	var loaclStorages []Storage
 	err := wmi.Query("Select * from Win32_LogicalDisk", &storageinfo)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 
 	for _, storage := range storageinfo {
-		if storage.Size <=0 {
+		if storage.Size <= 0 {
 			continue
 		}
 		info := Storage{
 			Name:       storage.Name,
 			FileSystem: storage.FileSystem,
-			Total:      storage.Size,
-			Free:       storage.FreeSpace,
+			Total:      int(storage.Size),
+			Free:       int(storage.FreeSpace),
 		}
+		fmt.Println(storage)
 		loaclStorages = append(loaclStorages, info)
 	}
 	return loaclStorages, nil
 
+}
+
+func GetMemoryInfo() (Memory, error) {
+	type query struct {
+		FreePhysicalMemory      uint64
+		FreeSpaceInPagingFiles  uint64
+		TotalVisibleMemorySize  uint64
+		SizeStoredInPagingFiles uint64
+	}
+	var s []query
+	err := wmi.Query("Select FreePhysicalMemory,FreeSpaceInPagingFiles,TotalVisibleMemorySize,SizeStoredInPagingFiles from Win32_OperatingSystem", &s)
+	if err != nil {
+		return Memory{}, err
+	}
+	if len(s) != 1 {
+		return Memory{}, fmt.Errorf("query fail")
+	}
+	memory := Memory{}
+	memory.Physical.Free = int(s[0].FreePhysicalMemory)
+	memory.Physical.Total = int(s[0].TotalVisibleMemorySize)
+	memory.Swap.Free = int(s[0].FreeSpaceInPagingFiles)
+	memory.Swap.Total = int(s[0].SizeStoredInPagingFiles)
+	return memory, nil
 }

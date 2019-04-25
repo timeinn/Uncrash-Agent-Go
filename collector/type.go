@@ -20,6 +20,16 @@ type Interfaces struct {
 type Storage struct {
 	Name       string `json:"name"`
 	FileSystem string `json:"file_system"`
-	Total      uint64 `json:"total"`
-	Free       uint64 `json:"free"`
+	Total      int    `json:"total"`
+	Free       int    `json:"free"`
+}
+type Memory struct {
+	Physical struct {
+		Total int `json:"total"`
+		Free  int `json:"free"`
+	} `json:"physical"`
+	Swap struct {
+		Total int `json:"total"`
+		Free  int `json:"free"`
+	} `json:"swap"`
 }

@@ -5,4 +5,5 @@ require (
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/deckarep/golang-set v1.7.1
 	github.com/go-ole/go-ole v1.2.4 // indirect
+	golang.org/x/sys v0.0.0-20190422165155-953cdadca894
 )

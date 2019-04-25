@@ -1,6 +1,8 @@
 package collector
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestGetCPUInfo(t *testing.T) {
 	if cpuInfo, err := GetCPUInfo(); err != nil {
@@ -29,5 +31,12 @@ func TestGetDiskInfo(t *testing.T) {
 		t.Error(err)
 	} else {
 		t.Log(diskInfo)
+	}
+}
+func TestGetMemoryInfo(t *testing.T) {
+	if meminfo, err := GetMemoryInfo(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(meminfo)
 	}
 }
