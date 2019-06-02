@@ -173,7 +173,7 @@ func GetSession() (int, error) {
 		AddrV6    [4]int32   //16
 		Unused    [20]byte   //20
 	}
-	file, err := os.Open("/run/utmp")
+	file, err := os.Open("/var/run/utmp")
 	defer file.Close()
 	if err != nil {
 		return 0, err
