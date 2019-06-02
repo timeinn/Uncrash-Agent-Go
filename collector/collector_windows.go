@@ -7,6 +7,7 @@ import (
 	"github.com/StackExchange/wmi"
 	log "github.com/cihub/seelog"
 	"golang.org/x/sys/windows"
+	"time"
 )
 
 var modpsapi = windows.NewLazySystemDLL("psapi.dll")
@@ -90,4 +91,30 @@ func GetMemoryInfo() (Memory, error) {
 	memory.Swap.Free = int(s[0].FreeSpaceInPagingFiles)
 	memory.Swap.Total = int(s[0].SizeStoredInPagingFiles)
 	return memory, nil
+}
+func GetUptime() (int, error) {
+	type query struct {
+		LastBootUpTime time.Time
+	}
+	var s []query
+	err := wmi.Query("Select LastBootUpTime from Win32_OperatingSystem", &s)
+	if err != nil {
+		return 0, err
+	}
+	return int(time.Now().Sub(s[0].LastBootUpTime).Seconds()), nil
+}
+func GetKernel() (string, error) {
+	return "Windows NT", nil
+}
+
+func GetSession() (int, error) {
+	type query struct {
+		LogonId uint32
+	}
+	var s []query
+	err := wmi.Query("Select LogonId from Win32_LogonSession", &s)
+	if err != nil {
+		return 0, err
+	}
+	return len(s), nil
 }

@@ -4,6 +4,7 @@ package collector
 
 import (
 	"bufio"
+	"encoding/binary"
 	"github.com/deckarep/golang-set"
 	"io/ioutil"
 	"os"
@@ -116,7 +117,7 @@ func GetDiskInfo() ([]Storage, error) {
 }
 func GetMemoryInfo() (Memory, error) {
 	sysInfo := new(syscall.Sysinfo_t)
-	if err:=syscall.Sysinfo(sysInfo);err!=nil{
+	if err := syscall.Sysinfo(sysInfo); err != nil {
 		return Memory{}, err
 	}
 	memory := Memory{}
@@ -125,4 +126,67 @@ func GetMemoryInfo() (Memory, error) {
 	memory.Swap.Free = int(sysInfo.Freeswap)
 	memory.Swap.Total = int(sysInfo.Totalswap)
 	return memory, nil
+}
+
+func GetUptime() (int, error) {
+	b, err := ioutil.ReadFile("/proc/uptime")
+	if err != nil {
+		return 0, err
+	}
+	if t, err := strconv.ParseFloat(strings.Split(string(b), " ")[0], 64); err != nil {
+		return 0, err
+	} else {
+		return int(t), nil
+	}
+}
+
+func GetKernel() (string, error) {
+	if b, err := ioutil.ReadFile("/proc/sys/kernel/osrelease"); err != nil {
+		{
+			return "linux", err
+		}
+	} else {
+		return string(b), nil
+	}
+}
+
+func GetSession() (int, error) {
+	type ExitStatus struct {
+		X__e_termination int16
+		X__e_exit        int16
+	}
+	type TimeVal struct {
+		Sec  int32
+		Usec int32
+	}
+	type Utmp struct {
+		Type      int16      //2
+		Pad_cgo_0 [2]byte    //2
+		Pid       int32      //4
+		Line      [32]byte   //32
+		Id        [4]byte    //4
+		User      [32]byte   //32
+		Host      [256]byte  //256
+		Exit      ExitStatus //4
+		Session   int32      //4
+		Tv        TimeVal    //8
+		AddrV6    [4]int32   //16
+		Unused    [20]byte   //20
+	}
+	file, err := os.Open("/run/utmp")
+	defer file.Close()
+	if err != nil {
+		return 0, err
+	}
+	var v []Utmp
+	for {
+		var u Utmp
+		if err := binary.Read(file, binary.LittleEndian, &u); err != nil {
+			break
+		}
+		if u.Type == 7 {
+			v = append(v, u)
+		}
+	}
+	return len(v), nil
 }

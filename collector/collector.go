@@ -3,6 +3,7 @@ package collector
 import (
 	"net"
 	"os"
+	"runtime"
 	"strings"
 )
 
@@ -19,8 +20,8 @@ func GetNetInterfaces() (interfaces []Interfaces, error error) {
 		return
 	} else {
 		for _, v := range inters {
-			flag:=v.Flags.String()
-			if !strings.Contains(flag,"up") || strings.Contains(flag,"loopback"){
+			flag := v.Flags.String()
+			if !strings.Contains(flag, "up") || strings.Contains(flag, "loopback") {
 				continue
 			}
 			var inter = Interfaces{}
@@ -33,7 +34,7 @@ func GetNetInterfaces() (interfaces []Interfaces, error error) {
 					continue
 				}
 				for _, addr := range Addrs {
-					Addr,e:=addr.(*net.IPNet)
+					Addr, e := addr.(*net.IPNet)
 					if !e {
 						continue
 					}
@@ -44,5 +45,8 @@ func GetNetInterfaces() (interfaces []Interfaces, error error) {
 		}
 		return
 	}
+}
 
+func GetOSArch() string {
+	return runtime.GOARCH
 }
