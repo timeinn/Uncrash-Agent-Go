@@ -8,9 +8,10 @@ type Cpu struct {
 	Info []CpuInfo `json:"info"`
 }
 type CpuInfo struct {
-	Core   int    `json:"core"`
-	Name   string `json:"name"`
-	Thread int    `json:"thread"`
+	Core   int     `json:"core"`
+	Name   string  `json:"name"`
+	Thread int     `json:"thread"`
+	Freq   float64 `json:"freq"`
 }
 type Interfaces struct {
 	Name  string   `json:"name"`

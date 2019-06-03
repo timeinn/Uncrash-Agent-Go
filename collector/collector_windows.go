@@ -12,11 +12,13 @@ import (
 
 var modpsapi = windows.NewLazySystemDLL("psapi.dll")
 var kernel = windows.NewLazyDLL("Kernel32.dll")
+var procGetProcessMemoryInfo = modpsapi.NewProc("GetProcessMemoryInfo")
 
 type cpuInfo struct {
 	Name                      string
 	NumberOfCores             uint32
 	NumberOfLogicalProcessors uint32
+	MaxClockSpeed             uint32
 }
 
 func GetCPUInfo() (Cpu, error) {
@@ -33,6 +35,7 @@ func GetCPUInfo() (Cpu, error) {
 			Thread: int(v.NumberOfLogicalProcessors),
 			Name:   v.Name,
 			Core:   int(v.NumberOfCores),
+			Freq:   float64(v.MaxClockSpeed),
 		})
 
 	}
@@ -117,4 +120,18 @@ func GetSession() (int, error) {
 		return 0, err
 	}
 	return len(s), nil
+}
+
+func GetProcess() {
+	/*
+		 Get-WmiObject Win32_PerfFormattedData_PerfProc_Process `
+		>>     | Where-Object { $_.name -inotmatch '_total|idle' } `
+		>>     | ForEach-Object {
+		>>         "Process={0,-25} CPU_Usage={1,-12} Memory_Usage_(MB)={2,-16}" -f `
+		>>             $_.Name,$_.PercentProcessorTime,([math]::Round($_.WorkingSetPrivate/1Mb,2))
+		>>     }
+	*/
+	type query struct {
+		Name string
+	}
 }
