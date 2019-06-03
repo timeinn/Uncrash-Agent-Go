@@ -14,9 +14,9 @@ var modpsapi = windows.NewLazySystemDLL("psapi.dll")
 var kernel = windows.NewLazyDLL("Kernel32.dll")
 
 type cpuInfo struct {
-	Name          string
-	NumberOfCores uint32
-	ThreadCount   uint32
+	Name                      string
+	NumberOfCores             uint32
+	NumberOfLogicalProcessors uint32
 }
 
 func GetCPUInfo() (Cpu, error) {
@@ -30,7 +30,7 @@ func GetCPUInfo() (Cpu, error) {
 	info.Num = len(cpuinfo)
 	for _, v := range cpuinfo {
 		info.Info = append(info.Info, CpuInfo{
-			Thread: int(v.ThreadCount),
+			Thread: int(v.NumberOfLogicalProcessors),
 			Name:   v.Name,
 			Core:   int(v.NumberOfCores),
 		})
