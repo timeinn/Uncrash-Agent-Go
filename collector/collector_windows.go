@@ -7,7 +7,9 @@ import (
 	"github.com/StackExchange/wmi"
 	log "github.com/cihub/seelog"
 	"golang.org/x/sys/windows"
+	"syscall"
 	"time"
+	"unsafe"
 )
 
 var modpsapi = windows.NewLazySystemDLL("psapi.dll")
@@ -131,7 +133,34 @@ func GetProcess() {
 		>>             $_.Name,$_.PercentProcessorTime,([math]::Round($_.WorkingSetPrivate/1Mb,2))
 		>>     }
 	*/
-	type query struct {
-		Name string
+	h,_:=windows.CreateToolhelp32Snapshot(0x00000002,0)
+	if h < 0 {
+		fmt.Println(syscall.GetLastError())
+		return
 	}
+	var ret windows.ProcessEntry32
+	ret.Size = uint32(unsafe.Sizeof(ret))
+	var token windows.Token
+	defer token.Close()
+	for windows.Process32Next(h,&ret)==nil{
+		h2,e:=windows.OpenProcess(0x1000,false,ret.ProcessID)
+		if e!=nil{
+			continue
+		}
+
+		_=windows.OpenProcessToken(h2,syscall.TOKEN_QUERY,&token)
+		//if e == windows.ERROR_INVALID_HANDLE  || e==windows.ERROR_ACCESS_DENIED {
+		//	continue
+		//}
+		tu,e:=token.GetTokenUser()
+		if e!=nil{
+			continue
+		}
+		user, _, _, err := tu.User.Sid.LookupAccount("")
+		fmt.Printf("%+v\n",windows.UTF16ToString(ret.ExeFile[:]))
+		fmt.Println()
+		fmt.Println(user,  err)
+	}
+
+
 }
