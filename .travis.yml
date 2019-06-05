@@ -8,4 +8,4 @@ env:
 go:
   - "1.12.1"
 script:
-  - go test -v ./collector
+  - go test -v github.com/TimeInn/Uncrash-Agent-Go/Test
