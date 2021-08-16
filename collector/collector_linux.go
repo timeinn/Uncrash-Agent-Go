@@ -1,42 +1,39 @@
-// +build linux
-
-package linux
+package collector
 
 import (
 	"bufio"
 	"encoding/binary"
-	"github.com/TimeInn/Uncrash-Agent-Go/collector"
-	"github.com/deckarep/golang-set"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
+
+	mapset "github.com/deckarep/golang-set"
 )
 
-type linux struct {
-	collector.BaseCollector
+type linuxCo struct {
+}
+type _cinfo struct {
+	Cpu
+	PhysicalId int
 }
 
-func (linux linux) GetCPUInfo() (collector.Cpu, error) {
+func (l *linuxCo) GetCPUInfo() ([]Cpu, error) {
 	b, err := ioutil.ReadFile("/proc/cpuinfo")
 	if err != nil {
-		return collector.Cpu{}, err
+		return nil, err
 	}
 	content := string(b)
-	type _cinfo struct {
-		collector.CpuInfo
-		PhysicalId int
-	}
-	var cpuinfoRegExp = regexp.MustCompile("([^:]*?)\\s*:\\s*(.*)$")
-	var e = make(map[int]collector.CpuInfo, 0)
+	var cpuinfoRegExp = regexp.MustCompile(`([^:]*?)\s*:\s*(.*)$`)
+	var e = make(map[int]Cpu)
 	var _c = &_cinfo{}
 	lines := strings.Split(content, "\n")
 	for i, line := range lines {
 		if len(line) == 0 && i != len(lines)-1 {
 			if _, _ok := e[_c.PhysicalId]; !_ok {
-				e[_c.PhysicalId] = collector.CpuInfo{
+				e[_c.PhysicalId] = Cpu{
 					Core:   _c.Core,
 					Thread: _c.Thread,
 					Name:   _c.Name,
@@ -61,15 +58,19 @@ func (linux linux) GetCPUInfo() (collector.Cpu, error) {
 			_c.Core, _ = strconv.Atoi(value)
 		}
 	}
-	var c = collector.Cpu{}
+	c := make([]Cpu, 0)
 	for _, v := range e {
-		c.Info = append(c.Info, v)
+		c = append(c, v)
 	}
-	c.Num = len(e)
+	defer func() {
+		for k := range e {
+			delete(e, k)
+		}
+	}()
 	return c, nil
 }
 
-func (linux linux) GetDiskInfo() ([]collector.Storage, error) {
+func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 	useMounts := false
 	_f, err := os.Open("/proc/self/mountinfo")
 	if err != nil {
@@ -86,10 +87,10 @@ func (linux linux) GetDiskInfo() ([]collector.Storage, error) {
 	defer func() {
 		_ = _f.Close()
 	}()
-	Storages := make([]collector.Storage, 0)
+	Storages := make([]Disk, 0)
 	devSet := mapset.NewSet()
 	for s.Scan() {
-		var storage collector.Storage
+		var storage Disk
 		var path string
 		lines := strings.Fields(s.Text())
 		if useMounts {
@@ -108,24 +109,30 @@ func (linux linux) GetDiskInfo() ([]collector.Storage, error) {
 			path = lines[4]
 		}
 		if devSet.Add(storage.Name) {
+
 			fs := syscall.Statfs_t{}
 			err = syscall.Statfs(path, &fs)
 			if err != nil {
 				continue
 			}
+			storage.Mount = path
 			storage.Total = int(fs.Blocks * uint64(fs.Bsize))
 			storage.Free = int(fs.Bfree * uint64(fs.Bsize))
 			Storages = append(Storages, storage)
 		}
 	}
+	defer func() {
+		devSet.Clear()
+	}()
 	return Storages, nil
 }
-func (linux linux) GetMemoryInfo() (collector.Memory, error) {
+
+func (l *linuxCo) GetMemoryInfo() (Memory, error) {
 	sysInfo := new(syscall.Sysinfo_t)
 	if err := syscall.Sysinfo(sysInfo); err != nil {
-		return collector.Memory{}, err
+		return Memory{}, err
 	}
-	memory := collector.Memory{}
+	memory := Memory{}
 	memory.Physical.Free = int(sysInfo.Freeram)
 	memory.Physical.Total = int(sysInfo.Totalram)
 	memory.Swap.Free = int(sysInfo.Freeswap)
@@ -133,7 +140,7 @@ func (linux linux) GetMemoryInfo() (collector.Memory, error) {
 	return memory, nil
 }
 
-func (linux linux) GetUptime() (int, error) {
+func (l *linuxCo) GetUptime() (int, error) {
 	b, err := ioutil.ReadFile("/proc/uptime")
 	if err != nil {
 		return 0, err
@@ -145,44 +152,44 @@ func (linux linux) GetUptime() (int, error) {
 	}
 }
 
-func (linux linux) GetKernel() (string, error) {
+func (l *linuxCo) GetKernel() (string, error) {
 	if b, err := ioutil.ReadFile("/proc/sys/kernel/osrelease"); err != nil {
-		{
-			return "linux", err
-		}
+		return "linux", err
 	} else {
 		return string(b), nil
 	}
 }
 
-func (linux linux) GetSession() (int, error) {
-	type ExitStatus struct {
-		X__e_termination int16
-		X__e_exit        int16
-	}
-	type TimeVal struct {
-		Sec  int32
-		Usec int32
-	}
-	type Utmp struct {
-		Type      int16      //2
-		Pad_cgo_0 [2]byte    //2
-		Pid       int32      //4
-		Line      [32]byte   //32
-		Id        [4]byte    //4
-		User      [32]byte   //32
-		Host      [256]byte  //256
-		Exit      ExitStatus //4
-		Session   int32      //4
-		Tv        TimeVal    //8
-		AddrV6    [4]int32   //16
-		Unused    [20]byte   //20
-	}
+type ExitStatus struct {
+	X__e_termination int16
+	X__e_exit        int16
+}
+type TimeVal struct {
+	Sec  int32
+	Usec int32
+}
+type Utmp struct {
+	Type      int16      //2
+	Pad_cgo_0 [2]byte    //2
+	Pid       int32      //4
+	Line      [32]byte   //32
+	Id        [4]byte    //4
+	User      [32]byte   //32
+	Host      [256]byte  //256
+	Exit      ExitStatus //4
+	Session   int32      //4
+	Tv        TimeVal    //8
+	AddrV6    [4]int32   //16
+	Unused    [20]byte   //20
+}
+
+func (l *linuxCo) GetSession() (int, error) {
+
 	file, err := os.Open("/var/run/utmp")
-	defer file.Close()
 	if err != nil {
 		return 0, err
 	}
+	defer file.Close()
 	var v []Utmp
 	for {
 		var u Utmp
@@ -195,11 +202,7 @@ func (linux linux) GetSession() (int, error) {
 	}
 	return len(v), nil
 }
-func (linux linux) GetProcess() {
 
-}
 func init() {
-	collector.Register(func() collector.Collector {
-		return collector.Collector(linux{})
-	})
+	Register("linux", &linuxCo{})
 }

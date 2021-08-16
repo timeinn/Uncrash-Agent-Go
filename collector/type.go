@@ -1,36 +1,37 @@
 package collector
 
-type Message struct {
-	Cpu Cpu `json:"cpu"`
-}
+import "net"
+
 type Cpu struct {
-	Num  int       `json:"num"`
-	Info []CpuInfo `json:"info"`
-}
-type CpuInfo struct {
 	Core   int     `json:"core"`
 	Name   string  `json:"name"`
 	Thread int     `json:"thread"`
 	Freq   float64 `json:"freq"`
 }
 type Interfaces struct {
-	Name  string   `json:"name"`
-	Addrs []string `json:"addrs"`
+	Name  string       `json:"name"`
+	Addrs []net.IPAddr `json:"addrs"`
 }
 
-type Storage struct {
+type Disk struct {
+	Mount      string `json:"mount"`
 	Name       string `json:"name"`
 	FileSystem string `json:"file_system"`
 	Total      int    `json:"total"`
 	Free       int    `json:"free"`
 }
 type Memory struct {
-	Physical struct {
-		Total int `json:"total"`
-		Free  int `json:"free"`
-	} `json:"physical"`
-	Swap struct {
-		Total int `json:"total"`
-		Free  int `json:"free"`
-	} `json:"swap"`
+	Physical MemoryInfo `json:"physical"`
+	Swap     MemoryInfo `json:"swap"`
+}
+type MemoryInfo struct {
+	Total int `json:"total"`
+	Free  int `json:"free"`
+}
+type Process struct {
+	User      string `json:"user"`
+	CPU       string `json:"cpu"`
+	Memory    uint   `json:"memory"`
+	Command   string `json:"command"`
+	IsDefunct bool   `json:"is_defunct`
 }
