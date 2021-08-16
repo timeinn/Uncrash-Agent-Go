@@ -28,3 +28,10 @@ func TestGetMemoryInfo(t *testing.T) {
 		t.Log(GetMemoryInfo)
 	}
 }
+func TestGetProcess(t *testing.T) {
+	if GetProcess, err := collector.GetProcess(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(GetProcess)
+	}
+}

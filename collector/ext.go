@@ -13,6 +13,7 @@ type ExtCollector interface {
 	GetUptime() (int, error)
 	GetKernel() (string, error)
 	GetSession() (int, error)
+	GetProcess() ([]Process, error)
 }
 
 type safeExt struct {
@@ -56,4 +57,8 @@ func GetKernel() (string, error) {
 func GetSession() (int, error) {
 	checkExt()
 	return _extCollector.GetSession()
+}
+func GetProcess() ([]Process, error) {
+	checkExt()
+	return _extCollector.GetProcess()
 }

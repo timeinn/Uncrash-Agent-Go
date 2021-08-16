@@ -3,6 +3,7 @@ package collector
 import (
 	"bufio"
 	"encoding/binary"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -201,6 +202,103 @@ func (l *linuxCo) GetSession() (int, error) {
 		}
 	}
 	return len(v), nil
+}
+
+type process struct {
+	pid       int
+	comm      string
+	utime     int
+	stime     int
+	cutime    int
+	cstime    int
+	starttime int
+	rss       int
+}
+
+func (p *process) getInfo() error {
+	if err := p.getCmd(); err != nil {
+		return err
+	}
+	if f, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/stat", p.pid)); err != nil {
+		return err
+	} else {
+		stat := strings.Split(string(f), " ")
+		if len(stat) >= 24 {
+			p.utime, err = strconv.Atoi(stat[13])
+			if err != nil {
+				return err
+			}
+			p.stime, err = strconv.Atoi(stat[14])
+			if err != nil {
+				return err
+			}
+			p.cutime, err = strconv.Atoi(stat[15])
+			if err != nil {
+				return err
+			}
+			p.cstime, err = strconv.Atoi(stat[16])
+			if err != nil {
+				return err
+			}
+			p.starttime, err = strconv.Atoi(stat[21])
+			if err != nil {
+				return err
+			}
+			p.rss, _ = strconv.Atoi(stat[23])
+
+		}
+		return nil
+	}
+}
+func (p *process) getCmd() error {
+	if f, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/cmdline", p.pid)); err != nil {
+		return err
+	} else {
+		//p.comm = string(bytes.Trim(f, "\x00"))
+		p.comm = string(f)
+		return nil
+	}
+}
+
+const hz float64 = 100
+
+func (p *process) getCPU(utime int) float64 {
+	total_time := p.utime + p.stime + p.cstime + p.cutime
+	seconds := float64(utime) - (float64(p.starttime) / hz)
+	if seconds <= 0 || total_time <= 0 {
+		return 0
+	}
+	return 100 * ((float64(total_time) / hz) / seconds)
+}
+
+func (l *linuxCo) GetProcess() ([]Process, error) {
+	selfPid := os.Getpid()
+	fs, err := ioutil.ReadDir("/proc/")
+	ut, uterr := l.GetUptime()
+	if err != nil {
+		return nil, err
+	}
+	ps := make([]Process, 0)
+	for _, v := range fs {
+		if v.IsDir() {
+			pid, err := strconv.Atoi(v.Name())
+			if err != nil || pid == selfPid {
+				continue
+			}
+			var p = &process{pid: pid}
+			if p.getInfo() != nil || uterr != nil {
+				continue
+			}
+			pa := Process{}
+			pa.CPU = p.getCPU(ut)
+			pa.Command = p.comm
+			pa.Memory = uint(p.rss)
+			pa.User = "root"
+			ps = append(ps, pa)
+		}
+	}
+
+	return ps, nil
 }
 
 func init() {

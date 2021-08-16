@@ -29,9 +29,9 @@ type MemoryInfo struct {
 	Free  int `json:"free"`
 }
 type Process struct {
-	User      string `json:"user"`
-	CPU       string `json:"cpu"`
-	Memory    uint   `json:"memory"`
-	Command   string `json:"command"`
-	IsDefunct bool   `json:"is_defunct`
+	User      string  `json:"user"`
+	CPU       float64 `json:"cpu"`
+	Memory    uint    `json:"memory"`
+	Command   string  `json:"command"`
+	IsDefunct bool    `json:"is_defunct"`
 }
