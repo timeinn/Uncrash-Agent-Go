@@ -21,6 +21,7 @@ type _cinfo struct {
 	PhysicalId int
 }
 
+//Linux获取CPU信息
 func (l *linuxCo) GetCPUInfo() ([]Cpu, error) {
 	b, err := ioutil.ReadFile("/proc/cpuinfo")
 	if err != nil {
@@ -71,6 +72,7 @@ func (l *linuxCo) GetCPUInfo() ([]Cpu, error) {
 	return c, nil
 }
 
+// Linux获取挂在的硬盘信息
 func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 	useMounts := false
 	_f, err := os.Open("/proc/self/mountinfo")
@@ -128,6 +130,7 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 	return Storages, nil
 }
 
+//Linux内存信息
 func (l *linuxCo) GetMemoryInfo() (Memory, error) {
 	sysInfo := new(syscall.Sysinfo_t)
 	if err := syscall.Sysinfo(sysInfo); err != nil {
@@ -184,6 +187,8 @@ type Utmp struct {
 	Unused    [20]byte   //20
 }
 
+//获取用户会话数
+//读取 /var/run/utmp 文件不存在返回0
 func (l *linuxCo) GetSession() (int, error) {
 
 	file, err := os.Open("/var/run/utmp")
@@ -262,6 +267,7 @@ func (p *process) getCmd() error {
 
 const hz float64 = 100
 
+// 计算CPU使用率
 func (p *process) getCPU(utime int) float64 {
 	total_time := p.utime + p.stime + p.cstime + p.cutime
 	seconds := float64(utime) - (float64(p.starttime) / hz)
@@ -301,6 +307,7 @@ func (l *linuxCo) GetProcess() ([]Process, error) {
 	return ps, nil
 }
 
+//注册实现
 func init() {
 	Register("linux", &linuxCo{})
 }

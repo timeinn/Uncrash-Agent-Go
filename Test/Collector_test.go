@@ -35,3 +35,19 @@ func TestGetProcess(t *testing.T) {
 		t.Log(GetProcess)
 	}
 }
+
+func TestGetNet(t *testing.T) {
+	if GetProcess, err := collector.GetNetInterfaces(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(GetProcess)
+	}
+}
+
+func TestGetOutboundNetInterfaces(t *testing.T) {
+	if inter, err := collector.GetOutboundNetInterfaces(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(inter)
+	}
+}

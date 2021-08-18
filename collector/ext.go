@@ -6,6 +6,7 @@ import (
 	"sync"
 )
 
+// 根据各自平台获取信息的接口
 type ExtCollector interface {
 	GetCPUInfo() ([]Cpu, error)
 	GetDiskInfo() ([]Disk, error)
@@ -21,13 +22,17 @@ type safeExt struct {
 	ExtCollector
 }
 
+//保存平台的实现的接口
 var _extCollector *safeExt = &safeExt{ExtCollector: nil}
 
+// 检查接口实现
 func checkExt() {
 	if _extCollector == nil || _extCollector.ExtCollector == nil {
 		panic("no register " + runtime.GOOS + " collector")
 	}
 }
+
+// 注册平台实现的接口 以最后一次调用为准
 func Register(os string, ext ExtCollector) {
 	fmt.Println("Register ExtCollector", os)
 	_extCollector.Lock()
