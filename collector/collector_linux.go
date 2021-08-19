@@ -74,6 +74,8 @@ func (l *linuxCo) GetCPUInfo() ([]Cpu, error) {
 	return c, nil
 }
 
+var ignoreFilesystem = mapset.NewSet("squashfs")
+
 // Linux获取挂在的硬盘信息
 func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 	useMounts := false
@@ -97,21 +99,32 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 	for s.Scan() {
 		var storage Disk
 		var path string
-		lines := strings.Fields(s.Text())
+		fmt.Println(s.Text())
 		if useMounts {
+			lines := strings.Fields(s.Text())
 			if !strings.Contains(lines[0], "/dev/") && !strings.Contains(lines[0], "overlay") {
+				continue
+			}
+
+			if ignoreFilesystem.Contains(lines[2]) {
 				continue
 			}
 			storage.Name = lines[0]
 			storage.FileSystem = lines[2]
 			path = lines[1]
 		} else {
-			if !strings.Contains(lines[8], "/dev/") && !strings.Contains(lines[8], "overlay") {
+			mounts := strings.Split(s.Text(), "-")
+			tli := strings.Fields(mounts[1])
+			preli := strings.Fields(mounts[0])
+			if !strings.Contains(tli[1], "/dev/") && !strings.Contains(tli[1], "overlay") {
 				continue
 			}
-			storage.Name = lines[8]
-			storage.FileSystem = lines[7]
-			path = lines[4]
+			if ignoreFilesystem.Contains(tli[0]) {
+				continue
+			}
+			storage.Name = tli[1]
+			storage.FileSystem = tli[0]
+			path = preli[4]
 		}
 		if devSet.Add(storage.Name) {
 
@@ -345,7 +358,7 @@ func (l *linuxCo) GetInterfacesTraffic(i net.Interface) (*InterfacesTraffic, err
 		return nil, err
 	} else {
 		for _, info := range strings.Split(string(f), "\n")[2:] {
-			dataLine := strings.Split(removeDupSpace(strings.TrimSpace(info)), " ")
+			dataLine := strings.Fields(info)
 			if len(dataLine) < 17 {
 				continue
 			}
