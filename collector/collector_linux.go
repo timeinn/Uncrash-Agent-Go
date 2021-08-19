@@ -112,7 +112,7 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 		} else {
 			mounts := strings.Split(s.Text(), "-")
 			tli := strings.Fields(mounts[1])
-			preli := strings.Fields(mounts[1])
+			preli := strings.Fields(mounts[0])
 			if !strings.Contains(preli[1], "/dev/") && !strings.Contains(preli[1], "overlay") {
 				continue
 			}
