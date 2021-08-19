@@ -74,6 +74,8 @@ func (l *linuxCo) GetCPUInfo() ([]Cpu, error) {
 	return c, nil
 }
 
+var ignoreFilesystem = mapset.NewSet("squashfs")
+
 // Linux获取挂在的硬盘信息
 func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 	useMounts := false
@@ -103,7 +105,8 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 			if !strings.Contains(lines[0], "/dev/") && !strings.Contains(lines[0], "overlay") {
 				continue
 			}
-			if lines[2] == "squashfs" {
+
+			if ignoreFilesystem.Contains(lines[2]) {
 				continue
 			}
 			storage.Name = lines[0]
@@ -114,6 +117,9 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 			tli := strings.Fields(mounts[1])
 			preli := strings.Fields(mounts[0])
 			if !strings.Contains(tli[1], "/dev/") && !strings.Contains(tli[1], "overlay") {
+				continue
+			}
+			if ignoreFilesystem.Contains(tli[0]) {
 				continue
 			}
 			storage.Name = tli[1]
