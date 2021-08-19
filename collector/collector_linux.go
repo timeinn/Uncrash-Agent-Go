@@ -99,14 +99,14 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 		var path string
 		lines := strings.Fields(s.Text())
 		if useMounts {
-			if !strings.Contains(lines[0], "/dev/") {
+			if !strings.Contains(lines[0], "/dev/") && !strings.Contains(lines[0], "overlay") {
 				continue
 			}
 			storage.Name = lines[0]
 			storage.FileSystem = lines[2]
 			path = lines[1]
 		} else {
-			if !strings.Contains(lines[8], "/dev/") {
+			if !strings.Contains(lines[0], "/dev/") && !strings.Contains(lines[0], "overlay") {
 				continue
 			}
 			storage.Name = lines[8]
