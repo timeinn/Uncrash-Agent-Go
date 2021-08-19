@@ -76,14 +76,14 @@ func (l *linuxCo) GetCPUInfo() ([]Cpu, error) {
 
 // Linux获取挂在的硬盘信息
 func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
-	useMounts := false
-	_f, err := os.Open("/proc/self/mountinfo")
+	useMounts := true
+	_f, err := os.Open("/proc/self/mounts")
 	if err != nil {
 		if err != err.(*os.PathError) {
 			return nil, err
 		}
-		useMounts = true
-		_f, err = os.Open("/proc/self/mounts")
+		useMounts = false
+		_f, err = os.Open("/proc/self/mountinfo")
 		if err != nil {
 			return nil, err
 		}
