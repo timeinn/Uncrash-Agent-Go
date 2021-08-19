@@ -113,12 +113,12 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 			mounts := strings.Split(s.Text(), "-")
 			tli := strings.Fields(mounts[1])
 			preli := strings.Fields(mounts[0])
-			if !strings.Contains(preli[1], "/dev/") && !strings.Contains(preli[1], "overlay") {
+			if !strings.Contains(tli[1], "/dev/") && !strings.Contains(tli[1], "overlay") {
 				continue
 			}
-			storage.Name = preli[1]
-			storage.FileSystem = preli[0]
-			path = tli[4]
+			storage.Name = tli[1]
+			storage.FileSystem = tli[0]
+			path = preli[4]
 		}
 		if devSet.Add(storage.Name) {
 
@@ -352,7 +352,7 @@ func (l *linuxCo) GetInterfacesTraffic(i net.Interface) (*InterfacesTraffic, err
 		return nil, err
 	} else {
 		for _, info := range strings.Split(string(f), "\n")[2:] {
-			dataLine := strings.Split(removeDupSpace(strings.TrimSpace(info)), " ")
+			dataLine := strings.Fields(info)
 			if len(dataLine) < 17 {
 				continue
 			}
