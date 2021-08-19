@@ -76,14 +76,14 @@ func (l *linuxCo) GetCPUInfo() ([]Cpu, error) {
 
 // Linux获取挂在的硬盘信息
 func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
-	useMounts := true
-	_f, err := os.Open("/proc/self/mounts")
+	useMounts := false
+	_f, err := os.Open("/proc/self/mountinfo")
 	if err != nil {
 		if err != err.(*os.PathError) {
 			return nil, err
 		}
-		useMounts = false
-		_f, err = os.Open("/proc/self/mountinfo")
+		useMounts = true
+		_f, err = os.Open("/proc/self/mounts")
 		if err != nil {
 			return nil, err
 		}
@@ -97,22 +97,28 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 	for s.Scan() {
 		var storage Disk
 		var path string
-		lines := strings.Fields(s.Text())
-		fmt.Println(lines)
+		fmt.Println(s.Text())
 		if useMounts {
+			lines := strings.Fields(s.Text())
 			if !strings.Contains(lines[0], "/dev/") && !strings.Contains(lines[0], "overlay") {
+				continue
+			}
+			if lines[2] == "squashfs" {
 				continue
 			}
 			storage.Name = lines[0]
 			storage.FileSystem = lines[2]
 			path = lines[1]
 		} else {
-			if !strings.Contains(lines[8], "/dev/") && !strings.Contains(lines[8], "overlay") {
+			mounts := strings.Split(s.Text(), "-")
+			tli := strings.Fields(mounts[1])
+			preli := strings.Fields(mounts[1])
+			if !strings.Contains(preli[1], "/dev/") && !strings.Contains(preli[1], "overlay") {
 				continue
 			}
-			storage.Name = lines[8]
-			storage.FileSystem = lines[7]
-			path = lines[4]
+			storage.Name = preli[1]
+			storage.FileSystem = preli[0]
+			path = tli[4]
 		}
 		if devSet.Add(storage.Name) {
 
