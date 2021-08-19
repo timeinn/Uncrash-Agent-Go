@@ -106,7 +106,7 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 			storage.FileSystem = lines[2]
 			path = lines[1]
 		} else {
-			if !strings.Contains(lines[0], "/dev/") && !strings.Contains(lines[0], "overlay") {
+			if !strings.Contains(lines[8], "/dev/") && !strings.Contains(lines[8], "overlay") {
 				continue
 			}
 			storage.Name = lines[8]
