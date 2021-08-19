@@ -51,3 +51,16 @@ func TestGetOutboundNetInterfaces(t *testing.T) {
 		t.Log(inter)
 	}
 }
+func TestGetInterfacesTraffic(t *testing.T) {
+	i, err := collector.GetOutboundNetInterfaces()
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	t.Log(i)
+	if inter, err := collector.GetInterfacesTraffic(*i); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(inter)
+	}
+}

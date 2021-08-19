@@ -35,3 +35,8 @@ type Process struct {
 	Command   string  `json:"command"`
 	IsDefunct bool    `json:"is_defunct"`
 }
+
+// 网卡流量
+type InterfacesTraffic struct {
+	ReceiveBytes, ReceivePackets, TransmitBytes, TransmitPackets uint64
+}

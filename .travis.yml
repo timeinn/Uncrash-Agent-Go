@@ -1,11 +1,11 @@
 language: go
 os:
-  - windows
+#  - windows
   - linux
 
 env:
   - GO111MODULE=on
 go:
-  - "1.12.1"
+  - "1.16.7"
 script:
   - go test -v github.com/TimeInn/Uncrash-Agent-Go/Test

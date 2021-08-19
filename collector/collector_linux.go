@@ -5,7 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
+	"os/user"
 	"regexp"
 	"strconv"
 	"strings"
@@ -218,6 +220,8 @@ type process struct {
 	cstime    int
 	starttime int
 	rss       int
+	uid       string
+	defunct   bool
 }
 
 func (p *process) getInfo() error {
@@ -229,6 +233,7 @@ func (p *process) getInfo() error {
 	} else {
 		stat := strings.Split(string(f), " ")
 		if len(stat) >= 24 {
+			p.defunct = stat[2] == "Z"
 			p.utime, err = strconv.Atoi(stat[13])
 			if err != nil {
 				return err
@@ -249,8 +254,6 @@ func (p *process) getInfo() error {
 			if err != nil {
 				return err
 			}
-			p.rss, _ = strconv.Atoi(stat[23])
-
 		}
 		return nil
 	}
@@ -261,6 +264,33 @@ func (p *process) getCmd() error {
 	} else {
 		//p.comm = string(bytes.Trim(f, "\x00"))
 		p.comm = string(f)
+		return nil
+	}
+}
+func (p *process) getUidAndRam() error {
+	if f, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/status", p.pid)); err != nil {
+		return err
+	} else {
+		uid := false
+		ram := false
+		for _, v := range strings.Split(string(f), "\n") {
+			if v == "" {
+				continue
+			}
+			if sp := strings.Split(v, "\t"); len(sp) >= 2 {
+				switch strings.TrimSpace(sp[0]) {
+				case "Uid:":
+					p.uid = strings.TrimSpace(sp[1])
+					uid = true
+				case "VmRSS":
+					ram = true
+					p.rss, _ = strconv.Atoi(strings.TrimSpace(sp[1]))
+				}
+			}
+			if uid && ram {
+				break
+			}
+		}
 		return nil
 	}
 }
@@ -292,6 +322,7 @@ func (l *linuxCo) GetProcess() ([]Process, error) {
 				continue
 			}
 			var p = &process{pid: pid}
+			p.getUidAndRam()
 			if p.getInfo() != nil || uterr != nil {
 				continue
 			}
@@ -299,15 +330,47 @@ func (l *linuxCo) GetProcess() ([]Process, error) {
 			pa.CPU = p.getCPU(ut)
 			pa.Command = p.comm
 			pa.Memory = uint(p.rss)
-			pa.User = "root"
+			if puser, err := user.LookupId(p.uid); err == nil {
+				pa.User = puser.Username
+			}
+			pa.IsDefunct = p.defunct
 			ps = append(ps, pa)
 		}
 	}
-
 	return ps, nil
+}
+func (l *linuxCo) GetInterfacesTraffic(i net.Interface) (*InterfacesTraffic, error) {
+	//interfaceName := i.Name
+	if f, err := ioutil.ReadFile("/proc/net/dev"); err != nil {
+		return nil, err
+	} else {
+		for _, info := range strings.Split(string(f), "\n")[2:] {
+			dataLine := strings.Split(removeDupSpace(strings.TrimSpace(info)), " ")
+			if len(dataLine) < 17 {
+				continue
+			}
+			if i.Name+":" == dataLine[0] {
+				traffic := &InterfacesTraffic{}
+				traffic.ReceiveBytes, _ = strconv.ParseUint(dataLine[1], 10, 64)
+				traffic.ReceivePackets, _ = strconv.ParseUint(dataLine[2], 10, 64)
+				traffic.TransmitBytes, _ = strconv.ParseUint(dataLine[8], 10, 64)
+				traffic.TransmitPackets, _ = strconv.ParseUint(dataLine[9], 10, 64)
+				return traffic, nil
+			}
+
+		}
+	}
+	return nil, ErrorNotFound
 }
 
 //注册实现
 func init() {
 	Register("linux", &linuxCo{})
+}
+
+var space = regexp.MustCompile(`\s+`)
+
+func removeDupSpace(s string) string {
+	return space.ReplaceAllString(s, " ")
+
 }

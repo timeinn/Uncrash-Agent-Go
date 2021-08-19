@@ -2,6 +2,7 @@ package collector
 
 import (
 	"fmt"
+	"net"
 	"runtime"
 	"sync"
 )
@@ -15,6 +16,7 @@ type ExtCollector interface {
 	GetKernel() (string, error)
 	GetSession() (int, error)
 	GetProcess() ([]Process, error)
+	GetInterfacesTraffic(net.Interface) (*InterfacesTraffic, error)
 }
 
 type safeExt struct {
@@ -66,4 +68,8 @@ func GetSession() (int, error) {
 func GetProcess() ([]Process, error) {
 	checkExt()
 	return _extCollector.GetProcess()
+}
+func GetInterfacesTraffic(i net.Interface) (*InterfacesTraffic, error) {
+	checkExt()
+	return _extCollector.GetInterfacesTraffic(i)
 }
