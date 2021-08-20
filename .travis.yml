@@ -8,6 +8,6 @@ env:
 go:
   - "1.16.7"
 script:
-  - go test -race -coverprofile=coverage.txt -covermode=atomic github.com/TimeInn/Uncrash-Agent-Go/Test
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - go test -race -coverprofile=coverage.txt -covermode=atomic 
+#after_success:
+#  - bash <(curl -s https://codecov.io/bash)

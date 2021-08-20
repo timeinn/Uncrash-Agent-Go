@@ -1,13 +1,11 @@
-package test
+package collector
 
 import (
 	"testing"
-
-	"github.com/TimeInn/Uncrash-Agent-Go/collector"
 )
 
 func TestGetCPUInfo(t *testing.T) {
-	if cpuinfo, err := collector.GetCPUInfo(); err != nil {
+	if cpuinfo, err := GetCPUInfo(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(cpuinfo)
@@ -15,21 +13,21 @@ func TestGetCPUInfo(t *testing.T) {
 }
 
 func TestGetDiskInfo(t *testing.T) {
-	if DiskInfo, err := collector.GetDiskInfo(); err != nil {
+	if DiskInfo, err := GetDiskInfo(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(DiskInfo)
 	}
 }
 func TestGetMemoryInfo(t *testing.T) {
-	if GetMemoryInfo, err := collector.GetMemoryInfo(); err != nil {
+	if GetMemoryInfo, err := GetMemoryInfo(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(GetMemoryInfo)
 	}
 }
 func TestGetProcess(t *testing.T) {
-	if GetProcess, err := collector.GetProcess(); err != nil {
+	if GetProcess, err := GetProcess(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(GetProcess)
@@ -37,7 +35,7 @@ func TestGetProcess(t *testing.T) {
 }
 
 func TestGetNet(t *testing.T) {
-	if GetProcess, err := collector.GetNetInterfaces(); err != nil {
+	if GetProcess, err := GetNetInterfaces(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(GetProcess)
@@ -45,20 +43,20 @@ func TestGetNet(t *testing.T) {
 }
 
 func TestGetOutboundNetInterfaces(t *testing.T) {
-	if inter, err := collector.GetOutboundNetInterfaces(); err != nil {
+	if inter, err := GetOutboundNetInterfaces(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(inter)
 	}
 }
 func TestGetInterfacesTraffic(t *testing.T) {
-	i, err := collector.GetOutboundNetInterfaces()
+	i, err := GetOutboundNetInterfaces()
 	if err != nil {
 		t.Error(err)
 		return
 	}
 	t.Log(i)
-	if inter, err := collector.GetInterfacesTraffic(*i); err != nil {
+	if inter, err := GetInterfacesTraffic(*i); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(inter)
@@ -66,7 +64,7 @@ func TestGetInterfacesTraffic(t *testing.T) {
 }
 
 func TestGetLimit(t *testing.T) {
-	if inter, err := collector.GetLimit(); err != nil {
+	if inter, err := GetLimit(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(inter)
@@ -74,14 +72,14 @@ func TestGetLimit(t *testing.T) {
 }
 
 func TestGetLoadAvg(t *testing.T) {
-	if inter, err := collector.GetLoadAvg(); err != nil {
+	if inter, err := GetLoadAvg(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(inter)
 	}
 }
 func TestGetLoad(t *testing.T) {
-	if inter, err := collector.GetLoad(); err != nil {
+	if inter, err := GetLoad(); err != nil {
 		t.Error(err)
 	} else {
 		t.Log(inter)
