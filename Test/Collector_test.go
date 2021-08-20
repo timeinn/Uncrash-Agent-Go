@@ -64,3 +64,26 @@ func TestGetInterfacesTraffic(t *testing.T) {
 		t.Log(inter)
 	}
 }
+
+func TestGetLimit(t *testing.T) {
+	if inter, err := collector.GetLimit(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(inter)
+	}
+}
+
+func TestGetLoadAvg(t *testing.T) {
+	if inter, err := collector.GetLoadAvg(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(inter)
+	}
+}
+func TestGetLoad(t *testing.T) {
+	if inter, err := collector.GetLoad(); err != nil {
+		t.Error(err)
+	} else {
+		t.Log(inter)
+	}
+}

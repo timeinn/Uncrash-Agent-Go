@@ -42,7 +42,7 @@ func GetNetInterfaces() (interfaces []net.Interface, error error) {
 	}
 }
 
-// 获取访问外网的网卡IP
+//GetOutboundIP 获取访问外网的网卡本机IP
 // 建立一个UDP然后提取本机IP
 func GetOutboundIP() (*net.IP, error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")

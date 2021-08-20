@@ -99,7 +99,6 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 	for s.Scan() {
 		var storage Disk
 		var path string
-		fmt.Println(s.Text())
 		if useMounts {
 			lines := strings.Fields(s.Text())
 			if !strings.Contains(lines[0], "/dev/") && !strings.Contains(lines[0], "overlay") {
@@ -134,8 +133,8 @@ func (l *linuxCo) GetDiskInfo() ([]Disk, error) {
 				continue
 			}
 			storage.Mount = path
-			storage.Total = int(fs.Blocks * uint64(fs.Bsize))
-			storage.Free = int(fs.Bfree * uint64(fs.Bsize))
+			storage.Total = fs.Blocks * uint64(fs.Bsize) //byte
+			storage.Free = fs.Bfree * uint64(fs.Bsize)
 			Storages = append(Storages, storage)
 		}
 	}
@@ -152,10 +151,10 @@ func (l *linuxCo) GetMemoryInfo() (Memory, error) {
 		return Memory{}, err
 	}
 	memory := Memory{}
-	memory.Physical.Free = int(sysInfo.Freeram)
-	memory.Physical.Total = int(sysInfo.Totalram)
-	memory.Swap.Free = int(sysInfo.Freeswap)
-	memory.Swap.Total = int(sysInfo.Totalswap)
+	memory.Physical.Free = sysInfo.Freeram //byte
+	memory.Physical.Total = sysInfo.Totalram
+	memory.Swap.Free = sysInfo.Freeswap
+	memory.Swap.Total = sysInfo.Totalswap
 	return memory, nil
 }
 
@@ -164,7 +163,7 @@ func (l *linuxCo) GetUptime() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if t, err := strconv.ParseFloat(strings.Split(string(b), " ")[0], 64); err != nil {
+	if t, err := strconv.ParseFloat(strings.Fields(string(b))[0], 64); err != nil {
 		return 0, err
 	} else {
 		return int(t), nil
@@ -232,7 +231,7 @@ type process struct {
 	cutime    int
 	cstime    int
 	starttime int
-	rss       int
+	rss       uint64
 	uid       string
 	defunct   bool
 }
@@ -244,7 +243,7 @@ func (p *process) getInfo() error {
 	if f, err := ioutil.ReadFile(fmt.Sprintf("/proc/%d/stat", p.pid)); err != nil {
 		return err
 	} else {
-		stat := strings.Split(string(f), " ")
+		stat := strings.Fields(string(f))
 		if len(stat) >= 24 {
 			p.defunct = stat[2] == "Z"
 			p.utime, err = strconv.Atoi(stat[13])
@@ -290,14 +289,14 @@ func (p *process) getUidAndRam() error {
 			if v == "" {
 				continue
 			}
-			if sp := strings.Split(v, "\t"); len(sp) >= 2 {
+			if sp := strings.Fields(v); len(sp) >= 2 {
 				switch strings.TrimSpace(sp[0]) {
 				case "Uid:":
 					p.uid = strings.TrimSpace(sp[1])
 					uid = true
 				case "VmRSS":
 					ram = true
-					p.rss, _ = strconv.Atoi(strings.TrimSpace(sp[1]))
+					p.rss, _ = strconv.ParseUint(strings.TrimSpace(sp[1]), 10, 64)
 				}
 			}
 			if uid && ram {
@@ -342,7 +341,7 @@ func (l *linuxCo) GetProcess() ([]Process, error) {
 			pa := Process{}
 			pa.CPU = p.getCPU(ut)
 			pa.Command = p.comm
-			pa.Memory = uint(p.rss)
+			pa.Memory = p.rss
 			if puser, err := user.LookupId(p.uid); err == nil {
 				pa.User = puser.Username
 			}
@@ -375,15 +374,51 @@ func (l *linuxCo) GetInterfacesTraffic(i net.Interface) (*InterfacesTraffic, err
 	}
 	return nil, ErrorNotFound
 }
+func (l *linuxCo) GetLimit() (*Limit, error) {
+	data, err := ioutil.ReadFile("/proc/sys/fs/file-nr")
+	if err != nil {
+		return nil, err
+	}
+	limit := &Limit{}
+	line := strings.Fields(string(data))
+	if len(line) < 3 {
+		return limit, nil
+	}
+	limit.Cur, _ = strconv.ParseUint(line[0], 10, 64)
+	limit.Max, _ = strconv.ParseUint(line[2], 10, 64)
+	return limit, nil
+}
+func (l *linuxCo) GetLoadAvg() ([]float32, error) {
+	data, err := ioutil.ReadFile("/proc/loadavg")
+	if err != nil {
+		return []float32{0, 0, 0}, nil
+	}
+	avg := make([]float32, 0)
+	for _, v := range strings.Fields(string(data))[:3] {
+		l, _ := strconv.ParseFloat(v, 32)
+		avg = append(avg, float32(l))
+	}
+	return avg, nil
+}
+func (l *linuxCo) GetLoad() (*Load, error) {
+	data, err := ioutil.ReadFile("/proc/stat")
+	if err != nil {
+		return nil, err
+	}
+
+	info := strings.Fields(strings.Split(string(data), "\n")[0])
+	load := &Load{}
+	l1, _ := strconv.ParseUint(info[1], 10, 64)
+	l2, _ := strconv.ParseUint(info[2], 10, 64)
+	l3, _ := strconv.ParseUint(info[3], 10, 64)
+	l4, _ := strconv.ParseUint(info[4], 10, 64)
+	load.Cpu = l1 + l2 + l3 + l4
+	load.Io = l3 + l4
+	load.Idle = l3
+	return load, nil
+}
 
 //注册实现
 func init() {
 	Register("linux", &linuxCo{})
-}
-
-var space = regexp.MustCompile(`\s+`)
-
-func removeDupSpace(s string) string {
-	return space.ReplaceAllString(s, " ")
-
 }

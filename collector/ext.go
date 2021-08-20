@@ -17,6 +17,9 @@ type ExtCollector interface {
 	GetSession() (int, error)
 	GetProcess() ([]Process, error)
 	GetInterfacesTraffic(net.Interface) (*InterfacesTraffic, error)
+	GetLimit() (*Limit, error)
+	GetLoadAvg() ([]float32, error)
+	GetLoad() (*Load, error)
 }
 
 type safeExt struct {
@@ -72,4 +75,16 @@ func GetProcess() ([]Process, error) {
 func GetInterfacesTraffic(i net.Interface) (*InterfacesTraffic, error) {
 	checkExt()
 	return _extCollector.GetInterfacesTraffic(i)
+}
+func GetLimit() (*Limit, error) {
+	checkExt()
+	return _extCollector.GetLimit()
+}
+func GetLoadAvg() ([]float32, error) {
+	checkExt()
+	return _extCollector.GetLoadAvg()
+}
+func GetLoad() (*Load, error) {
+	checkExt()
+	return _extCollector.GetLoad()
 }
